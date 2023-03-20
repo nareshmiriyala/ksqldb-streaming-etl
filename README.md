@@ -56,6 +56,8 @@ CREATE TABLE lodgement (id UUID PRIMARY KEY, status TEXT, workspace_id UUID,crea
 ```roomsql
 INSERT INTO lodgement (id, status, workspace_id,created_date_time) VALUES ('3ea63308-c5da-11ed-afa1-0242ac120002','PENDING', 'dff8a5b6-c5d9-11ed-afa1-0242ac120002',CURRENT_TIMESTAMP);
 INSERT INTO lodgement (id, status, workspace_id,created_date_time) VALUES ('4f1aa0ca-c6b1-11ed-afa1-0242ac120002','COMPLETED', 'dff8a5b6-c5d9-11ed-afa1-0242ac120002',CURRENT_TIMESTAMP);
+INSERT INTO lodgement (id, status, workspace_id,created_date_time) VALUES ('342ab748-c6eb-11ed-afa1-0242ac120002','FAILED', '5d4b0101-4b41-4505-a378-3e4f8fa40ed6',CURRENT_TIMESTAMP);
+
 
 ```
 
@@ -86,6 +88,7 @@ CREATE TABLE settlement (id UUID PRIMARY KEY, status TEXT, workspace_id UUID,cre
 ```roomsql
 INSERT INTO settlement (id, status, workspace_id,created_date_time) VALUES ('5f8c7a5a-c6b1-11ed-afa1-0242ac120002','PENDING', 'dff8a5b6-c5d9-11ed-afa1-0242ac120002',CURRENT_TIMESTAMP);
 INSERT INTO settlement (id, status, workspace_id,created_date_time) VALUES ('6dcd8816-c5da-11ed-afa1-0242ac120002','PENDING', 'dff8a5b6-c5d9-11ed-afa1-0242ac120002',CURRENT_TIMESTAMP);
+INSERT INTO settlement (id, status, workspace_id,created_date_time) VALUES ('ae445958-c6eb-11ed-afa1-0242ac120002','FAILED', '5d4b0101-4b41-4505-a378-3e4f8fa40ed6',CURRENT_TIMESTAMP);
 ```
 
 ### Create the subscriber table in Postgres
@@ -113,7 +116,7 @@ CREATE TABLE subscriber (id UUID PRIMARY KEY, name TEXT,age INT,created_date_tim
 4) Seed the table with some initial data:
 
 ```roomsql
-INSERT INTO subscriber (id, name, age,created_date_time) VALUES ('9762ba02-c5da-11ed-afa1-0242ac120002','Susbscriber_1', 30,CURRENT_TIMESTAMP);
+INSERT INTO subscriber (id, name, age,created_date_time) VALUES ('f5f8ec5e-c5d9-11ed-afa1-0242ac120002','Susbscriber_3', 60,CURRENT_TIMESTAMP);
 INSERT INTO subscriber (id, name, age,created_date_time) VALUES ('6a7b4df6-c6b1-11ed-afa1-0242ac120002','Susbscriber_2', 25,CURRENT_TIMESTAMP);
 ```
 
@@ -255,7 +258,7 @@ CREATE STREAM subscriber_stream WITH (
 ```
 
 ```shell
-CREATE TABLE workspace_summary_id_new_3 AS
+CREATE STREAM workspace_summary_id_new_3 AS
     SELECT w.id AS workspace_id,
            latest_by_offset(w.susbscriber_id) AS subscriber_id,
            latest_by_offset(w.mortgage_ref) AS mortgage_ref,
@@ -274,6 +277,20 @@ CREATE TABLE workspace_summary_id_new_3 AS
 
 
 ```
+
+CREATE STREAM workspace_summary_id_new_4 AS
+SELECT w.id AS workspace_id,
+w.susbscriber_id AS subscriber_id,
+w.mortgage_ref AS mortgage_ref,
+w.status AS workspace_status,
+sb.name AS subscriber_name,
+sb.age AS subscriber_age
+FROM workspace_stream  w
+INNER JOIN subscriber_stream  sb WITHIN 7 DAYS ON w.susbscriber_id=sb.id
+INNER JOIN lodgement_stream  ld WITHIN 7 DAYS  ON w.id=ld.workspace_id
+INNER JOIN settlement_stream  st  WITHIN 7 DAYS ON w.id=st.workspace_
+
+     EMIT CHANGES;
 
 ```shell
 CREATE STREAM my_stream_3 (
@@ -297,3 +314,15 @@ value_format='avro'
 select FORMAT_TIMESTAMP(CREATED_DATE_TIME, 'yyyy-MM-dd HH:mm:ss.SSS')   as created_date_time_string from workspace;
 
 SELECT TIMESTAMPTOSTRING(CREATED_DATE_TIME,'yyyy-MM-dd HH:mm:ss') AS formatted_order_time from workspace_stream;
+
+SELECT w.id AS workspace_id,
+w.susbscriber_id AS subscriber_id,
+w.mortgage_ref AS mortgage_ref,
+w.status AS workspace_status,
+sb.name AS subscriber_name,
+sb.age AS subscriber_age
+FROM workspace_stream  w
+LEFT JOIN subscriber_stream  sb WITHIN 7 DAYS ON w.susbscriber_id=sb.id where w.id='dff8a5b6-c5d9-11ed-afa1-0242ac120002' EMIT CHANGES;
+
+
+     update subscriber set name='Subscriber_10' where id='f5f8ec5e-c5d9-11ed-afa1-0242ac120002';
