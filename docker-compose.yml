@@ -39,16 +39,58 @@ services:
     environment:
       KAFKA_BROKERCONNECT: broker:9092
 
-  postgres:
+  postgres-workspace:
     image: postgres:latest
-    hostname: postgres
-    container_name: postgres
+    hostname: postgres-workspace
+    container_name: postgres-workspace
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres-workspace-user
+      POSTGRES_PASSWORD: postgres-workspace-pwd
       POSTGRES_DB: workspace_db
+    volumes:
+      - ./postgres/custom-config.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+
+  postgres-lodgement:
+    image: postgres:latest
+    hostname: postgres-lodgement
+    container_name: postgres-lodgement
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres-lodgement-user
+      POSTGRES_PASSWORD: postgres-lodgement-pwd
+      POSTGRES_DB: lodgement_db
+    volumes:
+      - ./postgres/custom-config.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+
+  postgres-settlement:
+    image: postgres:latest
+    hostname: postgres-settlement
+    container_name: postgres-settlement
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: postgres-settlement-user
+      POSTGRES_PASSWORD: postgres-settlement-pwd
+      POSTGRES_DB: settlement_db
+    volumes:
+      - ./postgres/custom-config.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+
+  postgres-subscriber:
+    image: postgres:latest
+    hostname: postgres-subscriber
+    container_name: postgres-subscriber
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_USER: postgres-subscriber-user
+      POSTGRES_PASSWORD: postgres-subscriber-pwd
+      POSTGRES_DB: subscriber_db
     volumes:
       - ./postgres/custom-config.conf:/etc/postgresql/postgresql.conf
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
@@ -67,7 +109,7 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://broker:9092
 
   ksqldb-server:
-    image: confluentinc/ksqldb-server:latest
+    image: confluentinc/ksqldb-server:0.28.2
     hostname: ksqldb-server
     container_name: ksqldb-server
     depends_on:
@@ -97,10 +139,33 @@ services:
       KSQL_CONNECT_PLUGIN_PATH: "/usr/share/kafka/plugins"
 
   ksqldb-cli:
-    image: confluentinc/ksqldb-cli:latest
+    image: confluentinc/ksqldb-cli:0.28.2
     container_name: ksqldb-cli
     depends_on:
       - broker
       - ksqldb-server
     entrypoint: /bin/sh
     tty: true
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:latest
+    hostname: control-center
+    container_name: control-center
+    depends_on:
+      - zookeeper
+      - broker
+      - schema-registry
+      - ksqldb-server
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker:9092'
+      CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      CONTROL_CENTER_KSQL_URL: "http://ksqldb-server:8088"
+#      CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      PORT: 9021
