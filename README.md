@@ -189,7 +189,7 @@ CREATE SOURCE CONNECTOR settlement_reader WITH (
     'transforms.unwrap.drop.tombstones' = 'false',
     'transforms.unwrap.delete.handling.mode' = 'rewrite',
          'transforms' = 'unwrap',
-     ''time.precision.mode' = 'connect',
+     'time.precision.mode' = 'connect',
       'plugin.name' = 'pgoutput'
 );
 
@@ -229,6 +229,52 @@ CREATE STREAM workspace_stream WITH (
 );
 
 ```
+
+```shell
+CREATE STREAM lodgement_stream WITH (
+    kafka_topic = 'lodgement_db.public.lodgement',
+    value_format = 'avro'
+);
+
+```
+
+```shell
+CREATE STREAM settlement_stream WITH (
+    kafka_topic = 'settlement_db.public.settlement',
+    value_format = 'avro'
+);
+
+```
+
+```shell
+CREATE STREAM subscriber_stream WITH (
+    kafka_topic = 'subscriber_db.public.subscriber',
+    value_format = 'avro'
+);
+
+```
+
+```shell
+CREATE TABLE workspace_summary_id_new_3 AS
+    SELECT w.id AS workspace_id,
+           latest_by_offset(w.susbscriber_id) AS subscriber_id,
+           latest_by_offset(w.mortgage_ref) AS mortgage_ref,
+           latest_by_offset(w.status) AS workspace_status,
+           latest_by_offset(ld.status) AS lodgement_status,
+           latest_by_offset(st.status) AS settlement_status,
+           latest_by_offset(sb.name) AS subscriber_name,
+           latest_by_offset(sb.age) AS subscriber_age
+    FROM workspace_stream  w
+    LEFT JOIN lodgement_stream  ld WITHIN 7 DAYS  ON w.id=ld.workspace_id
+     LEFT JOIN settlement_stream  st  WITHIN 7 DAYS ON w.id=st.workspace_id
+     LEFT JOIN subscriber_stream  sb WITHIN 7 DAYS ON w.susbscriber_id=sb.id
+     GROUP BY w.id
+     EMIT CHANGES;
+     
+
+
+```
+
 ```shell
 CREATE STREAM my_stream_3 (
 id VARCHAR,
