@@ -1,35 +1,76 @@
 # ksqldb-streaming-etl
 
-Add your aws credentials into aws_credentials file.
+Add your aws aws_access_key_id and aws_secret_access_key into docker-compose.yml file and create S3 bucket workspace-summary-s3-bucket.
 
-Postgres Debezium(debezium-debezium-connector-postgresql) and Confluent-S3-sink connector are downloaded into confluent-hub-components folder.
+Postgres Debezium(debezium-debezium-connector-postgresql) and Confluent-S3-sink connector are downloaded into
+confluent-hub-components folder.
 
 #### Start the stack
 
 ```shell
 docker-compose up -d
 ```
+
 Seed data should be inserted into workspace, lodgement,settlement and subscriber postgres databases.
 
 ```shell
 docker ps
 ```
+
 The above command should provide the status of all docker containers.
 After few minutes docker containers should be up a running.
 
 ## Start the Postgres source connectors
 
-With all the seed data in place, you can process it with ksqlDB. Connect to ksqlDB's server by using its interactive
+With all the seed data in place, you can process it with ksqlDB.
+
+## Please follow either Automated or Manual approach to create connectors and streams
+
+- ### Automated approach to create connectors and streams
+
+Run the below command to create the initial streams and datasets:
+
+```sh
+docker-compose run --entrypoint "/ksql/migrate" ksqldb-cli-migration
+```
+
+This should end with output similar to:
+
+```shell
+
+ Stream Name         | Kafka Topic                     | Key Format | Value Format | Windowed 
+----------------------------------------------------------------------------------------------
+ KSQL_PROCESSING_LOG | default_ksql_processing_log     | KAFKA      | JSON         | false    
+ LODGEMENT_STREAM    | lodgement_db.public.lodgement   | KAFKA      | AVRO         | false    
+ MIGRATION_EVENTS    | default_ksql_MIGRATION_EVENTS   | KAFKA      | JSON         | false    
+ SETTLEMENT_STREAM   | settlement_db.public.settlement | KAFKA      | AVRO         | false    
+ SUBSCRIBER_STREAM   | subscriber_db.public.subscriber | KAFKA      | AVRO         | false    
+ WORKSPACE_STREAM    | workspace_db.public.workspace   | KAFKA      | AVRO         | false    
+----------------------------------------------------------------------------------------------
+
+```
+
+_Note: To recreate the database from scratch, use this `docker-compose` command instead_
+
+```sh
+docker-compose up -d --renew-anon-volumes --force-recreate
+```
+
+Once successful AWS S3 should have objects created under workspace-summary-s3-bucket.
+
+#### Tear down stack
+
+```shell
+docker-compose down
+```
+
+- ### Manual CLI approach to create connectors and streams
+
+Connect to ksqlDB's server by using its interactive
 CLI. Run the following command from your host:
 
 ```shell
 docker exec -it ksqldb-cli ksql http://ksqldb-server:8088
-```
-
-Before you issue more commands, tell ksqlDB to start all queries from earliest point in each topic:
-
-```shell
-SET 'auto.offset.reset' = 'earliest';
 ```
 
 Now you can ask Debezium to stream the Postgres changelog into Kafka. Invoke the following command in ksqlDB, which
@@ -124,7 +165,7 @@ CREATE SOURCE CONNECTOR subscriber_reader WITH (
 
 ```
 
-## Create the ksqlDB source streams
+#### Create the ksqlDB source streams
 
 For ksqlDB to be able to use the topics that Debezium created, you must declare streams over it. Because you configured
 Kafka Connect with Schema Registry, you don't need to declare the schema of the data for the streams, because it's
@@ -207,3 +248,9 @@ CREATE SOURCE CONNECTOR s3_connector WITH (
 ```
 
 Try inserting more rows into Postgres database. Notice how the results update quickly in the S3 bucket.
+
+#### Tear down stack
+
+```shell
+docker-compose down
+```

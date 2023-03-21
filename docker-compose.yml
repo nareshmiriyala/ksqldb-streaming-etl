@@ -123,7 +123,6 @@ services:
       - "8088:8088"
     volumes:
       - "./confluent-hub-components/:/usr/share/kafka/plugins/"
-      - $PWD/aws_credentials:/root/.aws/credentials
     environment:
       KSQL_LISTENERS: "http://0.0.0.0:8088"
       KSQL_BOOTSTRAP_SERVERS: "broker:9092"
@@ -141,9 +140,24 @@ services:
       KSQL_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
       KSQL_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
       KSQL_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      KSQL_KSQL_STREAMS_AUTO_OFFSET_RESET: earliest
       KSQL_CONNECT_PLUGIN_PATH: "/usr/share/kafka/plugins"
 #      AWS_ACCESS_KEY_ID: <<PLEASE_PROVIDE_YOUR_AWS_ACCESS_KEY_ID>>
 #      AWS_SECRET_ACCESS_KEY:  <<PLEASE_PROVIDE_YOUR_AWS_SECRET_ACCESS_KEY>>
+
+  ksqldb-cli-migration:
+    image: confluentinc/ksqldb-cli:latest
+    container_name: ksqldb-cli-migration
+    depends_on:
+      - broker
+      - ksqldb-server
+      - postgres-lodgement
+      - postgres-workspace
+      - postgres-settlement
+      - postgres-subscriber
+    volumes:
+      - ./ksql:/ksql
+    entrypoint: ksql http://ksqldb-server:8088
 
   ksqldb-cli:
     image: confluentinc/ksqldb-cli:latest
