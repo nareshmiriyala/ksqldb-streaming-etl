@@ -1,9 +1,20 @@
 # ksqldb-streaming-etl
 
-Add your aws aws_access_key_id and aws_secret_access_key into docker-compose.yml file and create S3 bucket workspace-summary-s3-bucket.
+The directory structure contains the following:
 
-Postgres Debezium(debezium-debezium-connector-postgresql) and Confluent-S3-sink connector are downloaded into
-confluent-hub-components folder.
+- **confluent-hub-components**: This directory stores downloaded connectors from Confluent Hub, including Debezium
+  Postgres and S3 Sink.
+
+- **postgres**: This directory contains the configuration for Postgres.
+
+- **ksql**: This directory contains migration files for creating connectors and streams.
+
+For S3 Sink connector to write into AWS S3, follow these steps:
+
+- Add your aws_access_key_id and aws_secret_access_key to the docker-compose.yml file.
+
+- Create an S3 bucket named workspace-summary-s3-bucket. file and create S3 bucket workspace-summary-s3-bucket.
+
 
 #### Start the stack
 
@@ -11,14 +22,14 @@ confluent-hub-components folder.
 docker-compose up -d
 ```
 
-Seed data should be inserted into workspace, lodgement,settlement and subscriber postgres databases.
+The seed data will be automatically inserted into the workspace, lodgement, settlement, and subscriber Postgres databases.
 
 ```shell
 docker ps
 ```
 
 The above command should provide the status of all docker containers.
-After few minutes docker containers should be up a running.
+After a few minutes, the Docker containers should be up and running.
 
 ## Start the Postgres source connectors
 
