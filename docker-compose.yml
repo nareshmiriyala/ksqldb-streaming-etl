@@ -51,6 +51,7 @@ services:
       POSTGRES_DB: workspace_db
     volumes:
       - ./postgres/custom-config.conf:/etc/postgresql/postgresql.conf
+      - ./postgres/data/workspace:/docker-entrypoint-initdb.d/
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
 
   postgres-lodgement:
@@ -65,6 +66,7 @@ services:
       POSTGRES_DB: lodgement_db
     volumes:
       - ./postgres/custom-config.conf:/etc/postgresql/postgresql.conf
+      - ./postgres/data/lodgement:/docker-entrypoint-initdb.d/
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
 
   postgres-settlement:
@@ -79,6 +81,7 @@ services:
       POSTGRES_DB: settlement_db
     volumes:
       - ./postgres/custom-config.conf:/etc/postgresql/postgresql.conf
+      - ./postgres/data/settlement:/docker-entrypoint-initdb.d/
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
 
   postgres-subscriber:
@@ -93,6 +96,7 @@ services:
       POSTGRES_DB: subscriber_db
     volumes:
       - ./postgres/custom-config.conf:/etc/postgresql/postgresql.conf
+      - ./postgres/data/subscriber:/docker-entrypoint-initdb.d/
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
 
   schema-registry:
@@ -119,6 +123,7 @@ services:
       - "8088:8088"
     volumes:
       - "./confluent-hub-components/:/usr/share/kafka/plugins/"
+      - $PWD/aws_credentials:/root/.aws/credentials
     environment:
       KSQL_LISTENERS: "http://0.0.0.0:8088"
       KSQL_BOOTSTRAP_SERVERS: "broker:9092"
@@ -137,6 +142,8 @@ services:
       KSQL_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
       KSQL_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
       KSQL_CONNECT_PLUGIN_PATH: "/usr/share/kafka/plugins"
+#      AWS_ACCESS_KEY_ID: <<PLEASE_PROVIDE_YOUR_AWS_ACCESS_KEY_ID>>
+#      AWS_SECRET_ACCESS_KEY:  <<PLEASE_PROVIDE_YOUR_AWS_SECRET_ACCESS_KEY>>
 
   ksqldb-cli:
     image: confluentinc/ksqldb-cli:latest
@@ -162,7 +169,7 @@ services:
       CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker:9092'
       CONTROL_CENTER_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       CONTROL_CENTER_KSQL_URL: "http://ksqldb-server:8088"
-#      CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
+      CONTROL_CENTER_KSQL_ADVERTISED_URL: "http://localhost:8088"
       CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       CONTROL_CENTER_REPLICATION_FACTOR: 1
       CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
