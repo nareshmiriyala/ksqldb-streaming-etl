@@ -11,7 +11,7 @@ The directory structure contains the following:
 
 For S3 Sink connector to write into AWS S3, follow these steps:
 
-- Add your aws_access_key_id and aws_secret_access_key to the docker-compose.yml file.
+- Add your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY to the docker-compose.yml file.
 
 - Create an S3 bucket named workspace-summary-s3-bucket. file and create S3 bucket workspace-summary-s3-bucket.
 
